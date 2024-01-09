@@ -1,0 +1,53 @@
+version: "3.8"
+volumes:
+  jellyfin-config:
+    name: "Jellyfin Config"
+  jellyfin-cache:
+    name: "Jellyfin Cache"
+  media:
+    name: "Media"
+  media2:
+    name: "Media2"
+services:
+  nginx:
+    image: nginx:latest
+    restart: always
+    container_name: nginx_reverse_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      # - ./jellyfin.nginx.conf:/etc/nginx/conf.d/jellyfin.conf
+      - ./index.html:/usr/share/nginx/html/index.html
+      # - ./nextcloud.nginx.conf:/etc/nginx/conf.d/nextcloud.conf
+    depends_on:
+      - jellyfin
+  # nextcloud:
+  #   image: nextcloud
+  #   restart: always
+  #   container_name: nc_cloud_suite
+  #   expose:
+  #     - "80"
+  jellyfin:
+    image: jellyfin/jellyfin
+    restart: "unless-stopped"
+    network_mode: "bridge"
+    container_name: jf_media_server
+    expose:
+      - "8096"
+      - "1900"
+      - "7359"
+      - "8920"
+    volumes:
+      - /jellyfin-config:/config
+      - /jellyfin-cache:/cache
+      - /media:/media
+      - /media2:/media2:ro
+  ddclient:
+    image: lscr.io/linuxserver/ddclient:latest
+    container_name: ddclient_ddns
+    environment:
+      - TZ US/Pacific
+    volumes:
+      - ./ddclient.conf:/config/ddclient.conf
+    restart: unless-stopped
